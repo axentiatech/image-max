@@ -22,46 +22,61 @@ import {
   SidebarMenu,
   useSidebar,
 } from '@/components/ui/sidebar';
-import type { Chat } from '@/lib/db/schema';
 import { fetcher } from '@/lib/utils';
-import { ChatItem } from '@/components/sidebar-history-item';
+import { GenerationBatchItem } from '@/components/GenerationBatchItem';
 import useSWRInfinite from 'swr/infinite';
 import { LoaderIcon } from '@/components/icons';
 
-type GroupedChats = {
-  today: Chat[];
-  yesterday: Chat[];
-  lastWeek: Chat[];
-  lastMonth: Chat[];
-  older: Chat[];
+interface ImageGeneration {
+  id: string;
+  model: string;
+  imageUrl: string | null;
+  status: 'pending' | 'completed' | 'failed';
+  errorMsg?: string;
+}
+
+interface GenerationBatch {
+  id: string;
+  chatId: string;
+  prompt: string;
+  createdAt: string;
+  generations: ImageGeneration[];
+}
+
+type GroupedBatches = {
+  today: GenerationBatch[];
+  yesterday: GenerationBatch[];
+  lastWeek: GenerationBatch[];
+  lastMonth: GenerationBatch[];
+  older: GenerationBatch[];
 };
 
-export interface ChatHistory {
-  chats: Array<Chat>;
+export interface GenerationHistory {
+  batches: Array<GenerationBatch>;
   hasMore: boolean;
 }
 
 const PAGE_SIZE = 20;
 
-const groupChatsByDate = (chats: Chat[]): GroupedChats => {
+const groupBatchesByDate = (batches: GenerationBatch[]): GroupedBatches => {
   const now = new Date();
   const oneWeekAgo = subWeeks(now, 1);
   const oneMonthAgo = subMonths(now, 1);
 
-  return chats.reduce(
-    (groups, chat) => {
-      const chatDate = new Date(chat.createdAt);
+  return batches.reduce(
+    (groups, batch) => {
+      const batchDate = new Date(batch.createdAt);
 
-      if (isToday(chatDate)) {
-        groups.today.push(chat);
-      } else if (isYesterday(chatDate)) {
-        groups.yesterday.push(chat);
-      } else if (chatDate > oneWeekAgo) {
-        groups.lastWeek.push(chat);
-      } else if (chatDate > oneMonthAgo) {
-        groups.lastMonth.push(chat);
+      if (isToday(batchDate)) {
+        groups.today.push(batch);
+      } else if (isYesterday(batchDate)) {
+        groups.yesterday.push(batch);
+      } else if (batchDate > oneWeekAgo) {
+        groups.lastWeek.push(batch);
+      } else if (batchDate > oneMonthAgo) {
+        groups.lastMonth.push(batch);
       } else {
-        groups.older.push(chat);
+        groups.older.push(batch);
       }
 
       return groups;
@@ -72,25 +87,25 @@ const groupChatsByDate = (chats: Chat[]): GroupedChats => {
       lastWeek: [],
       lastMonth: [],
       older: [],
-    } as GroupedChats,
+    } as GroupedBatches,
   );
 };
 
-export function getChatHistoryPaginationKey(
+export function getGenerationHistoryPaginationKey(
   pageIndex: number,
-  previousPageData: ChatHistory,
+  previousPageData: GenerationHistory,
 ) {
   if (previousPageData && previousPageData.hasMore === false) {
     return null;
   }
 
-  if (pageIndex === 0) return `/api/history?limit=${PAGE_SIZE}`;
+  if (pageIndex === 0) return `/api/generation-history?limit=${PAGE_SIZE}`;
 
-  const firstChatFromPage = previousPageData.chats.at(-1);
+  const firstBatchFromPage = previousPageData.batches.at(-1);
 
-  if (!firstChatFromPage) return null;
+  if (!firstBatchFromPage) return null;
 
-  return `/api/history?ending_before=${firstChatFromPage.id}&limit=${PAGE_SIZE}`;
+  return `/api/generation-history?ending_before=${firstBatchFromPage.id}&limit=${PAGE_SIZE}`;
 }
 
 export function SidebarHistory({ user }: { user: User | undefined }) {
@@ -98,12 +113,12 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   const { id } = useParams();
 
   const {
-    data: paginatedChatHistories,
+    data: paginatedGenerationHistories,
     setSize,
     isValidating,
     isLoading,
     mutate,
-  } = useSWRInfinite<ChatHistory>(getChatHistoryPaginationKey, fetcher, {
+  } = useSWRInfinite<GenerationHistory>(getGenerationHistoryPaginationKey, fetcher, {
     fallbackData: [],
   });
 
@@ -111,34 +126,34 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const hasReachedEnd = paginatedChatHistories
-    ? paginatedChatHistories.some((page) => page.hasMore === false)
+  const hasReachedEnd = paginatedGenerationHistories
+    ? paginatedGenerationHistories.some((page) => page.hasMore === false)
     : false;
 
-  const hasEmptyChatHistory = paginatedChatHistories
-    ? paginatedChatHistories.every((page) => page.chats.length === 0)
+  const hasEmptyGenerationHistory = paginatedGenerationHistories
+    ? paginatedGenerationHistories.every((page) => page.batches.length === 0)
     : false;
 
   const handleDelete = async () => {
-    const deletePromise = fetch(`/api/chat?id=${deleteId}`, {
+    const deletePromise = fetch(`/api/generation-batch?id=${deleteId}`, {
       method: 'DELETE',
     });
 
     toast.promise(deletePromise, {
-      loading: 'Deleting chat...',
+      loading: 'Deleting generation...',
       success: () => {
-        mutate((chatHistories) => {
-          if (chatHistories) {
-            return chatHistories.map((chatHistory) => ({
-              ...chatHistory,
-              chats: chatHistory.chats.filter((chat) => chat.id !== deleteId),
+        mutate((generationHistories) => {
+          if (generationHistories) {
+            return generationHistories.map((generationHistory) => ({
+              ...generationHistory,
+              batches: generationHistory.batches.filter((batch) => batch.id !== deleteId),
             }));
           }
         });
 
-        return 'Chat deleted successfully';
+        return 'Generation deleted successfully';
       },
-      error: 'Failed to delete chat',
+      error: 'Failed to delete generation',
     });
 
     setShowDeleteDialog(false);
@@ -153,7 +168,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
       <SidebarGroup>
         <SidebarGroupContent>
           <div className="flex w-full flex-row items-center justify-center gap-2 px-2 text-sm text-zinc-500">
-            Login to save and revisit previous chats!
+            Login to save and revisit previous generations!
           </div>
         </SidebarGroupContent>
       </SidebarGroup>
@@ -167,11 +182,11 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
           Today
         </div>
         <SidebarGroupContent>
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-4">
             {[44, 32, 28, 64, 52].map((item) => (
               <div
                 key={item}
-                className="flex h-8 items-center gap-2 rounded-md px-2"
+                className="flex flex-col gap-2 rounded-md px-2"
               >
                 <div
                   className="h-4 max-w-(--skeleton-width) flex-1 rounded-md bg-sidebar-accent-foreground/10"
@@ -181,6 +196,11 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     } as React.CSSProperties
                   }
                 />
+                <div className="grid grid-cols-3 gap-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="w-20 h-20 rounded-md bg-sidebar-accent-foreground/10" />
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -189,12 +209,12 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     );
   }
 
-  if (hasEmptyChatHistory) {
+  if (hasEmptyGenerationHistory) {
     return (
       <SidebarGroup>
         <SidebarGroupContent>
           <div className="flex w-full flex-row items-center justify-center gap-2 px-2 text-sm text-zinc-500">
-            Your conversations will appear here once you start chatting!
+            Your image generations will appear here once you start creating!
           </div>
         </SidebarGroupContent>
       </SidebarGroup>
@@ -206,28 +226,28 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
       <SidebarGroup>
         <SidebarGroupContent>
           <SidebarMenu>
-            {paginatedChatHistories &&
+            {paginatedGenerationHistories &&
               (() => {
-                const chatsFromHistory = paginatedChatHistories.flatMap(
-                  (paginatedChatHistory) => paginatedChatHistory.chats,
+                const batchesFromHistory = paginatedGenerationHistories.flatMap(
+                  (paginatedGenerationHistory) => paginatedGenerationHistory.batches,
                 );
 
-                const groupedChats = groupChatsByDate(chatsFromHistory);
+                const groupedBatches = groupBatchesByDate(batchesFromHistory);
 
                 return (
                   <div className="flex flex-col gap-6">
-                    {groupedChats.today.length > 0 && (
+                    {groupedBatches.today.length > 0 && (
                       <div>
                         <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">
                           Today
                         </div>
-                        {groupedChats.today.map((chat) => (
-                          <ChatItem
-                            key={chat.id}
-                            chat={chat}
-                            isActive={chat.id === id}
-                            onDelete={(chatId: string) => {
-                              setDeleteId(chatId);
+                        {groupedBatches.today.map((batch) => (
+                          <GenerationBatchItem
+                            key={batch.id}
+                            batch={batch}
+                            isActive={batch.id === id}
+                            onDelete={(batchId: string) => {
+                              setDeleteId(batchId);
                               setShowDeleteDialog(true);
                             }}
                             setOpenMobile={setOpenMobile}
@@ -236,18 +256,18 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                       </div>
                     )}
 
-                    {groupedChats.yesterday.length > 0 && (
+                    {groupedBatches.yesterday.length > 0 && (
                       <div>
                         <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">
                           Yesterday
                         </div>
-                        {groupedChats.yesterday.map((chat) => (
-                          <ChatItem
-                            key={chat.id}
-                            chat={chat}
-                            isActive={chat.id === id}
-                            onDelete={(chatId: string) => {
-                              setDeleteId(chatId);
+                        {groupedBatches.yesterday.map((batch) => (
+                          <GenerationBatchItem
+                            key={batch.id}
+                            batch={batch}
+                            isActive={batch.id === id}
+                            onDelete={(batchId: string) => {
+                              setDeleteId(batchId);
                               setShowDeleteDialog(true);
                             }}
                             setOpenMobile={setOpenMobile}
@@ -256,18 +276,18 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                       </div>
                     )}
 
-                    {groupedChats.lastWeek.length > 0 && (
+                    {groupedBatches.lastWeek.length > 0 && (
                       <div>
                         <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">
                           Last 7 days
                         </div>
-                        {groupedChats.lastWeek.map((chat) => (
-                          <ChatItem
-                            key={chat.id}
-                            chat={chat}
-                            isActive={chat.id === id}
-                            onDelete={(chatId: string) => {
-                              setDeleteId(chatId);
+                        {groupedBatches.lastWeek.map((batch) => (
+                          <GenerationBatchItem
+                            key={batch.id}
+                            batch={batch}
+                            isActive={batch.id === id}
+                            onDelete={(batchId: string) => {
+                              setDeleteId(batchId);
                               setShowDeleteDialog(true);
                             }}
                             setOpenMobile={setOpenMobile}
@@ -276,18 +296,18 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                       </div>
                     )}
 
-                    {groupedChats.lastMonth.length > 0 && (
+                    {groupedBatches.lastMonth.length > 0 && (
                       <div>
                         <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">
                           Last 30 days
                         </div>
-                        {groupedChats.lastMonth.map((chat) => (
-                          <ChatItem
-                            key={chat.id}
-                            chat={chat}
-                            isActive={chat.id === id}
-                            onDelete={(chatId: string) => {
-                              setDeleteId(chatId);
+                        {groupedBatches.lastMonth.map((batch) => (
+                          <GenerationBatchItem
+                            key={batch.id}
+                            batch={batch}
+                            isActive={batch.id === id}
+                            onDelete={(batchId: string) => {
+                              setDeleteId(batchId);
                               setShowDeleteDialog(true);
                             }}
                             setOpenMobile={setOpenMobile}
@@ -296,18 +316,18 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                       </div>
                     )}
 
-                    {groupedChats.older.length > 0 && (
+                    {groupedBatches.older.length > 0 && (
                       <div>
                         <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">
                           Older than last month
                         </div>
-                        {groupedChats.older.map((chat) => (
-                          <ChatItem
-                            key={chat.id}
-                            chat={chat}
-                            isActive={chat.id === id}
-                            onDelete={(chatId: string) => {
-                              setDeleteId(chatId);
+                        {groupedBatches.older.map((batch) => (
+                          <GenerationBatchItem
+                            key={batch.id}
+                            batch={batch}
+                            isActive={batch.id === id}
+                            onDelete={(batchId: string) => {
+                              setDeleteId(batchId);
                               setShowDeleteDialog(true);
                             }}
                             setOpenMobile={setOpenMobile}
@@ -330,14 +350,14 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
           {hasReachedEnd ? (
             <div className="mt-8 flex w-full flex-row items-center justify-center gap-2 px-2 text-sm text-zinc-500">
-              You have reached the end of your chat history.
+              You have reached the end of your generation history.
             </div>
           ) : (
             <div className="mt-8 flex flex-row items-center gap-2 p-2 text-zinc-500 dark:text-zinc-400">
               <div className="animate-spin">
                 <LoaderIcon />
               </div>
-              <div>Loading Chats...</div>
+              <div>Loading Generations...</div>
             </div>
           )}
         </SidebarGroupContent>
@@ -349,7 +369,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete your
-              chat and remove it from our servers.
+              image generation batch and remove it from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
