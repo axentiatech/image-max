@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 
 export function useAuth() {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<{ user: any } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 

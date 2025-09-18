@@ -67,7 +67,7 @@ export default function ChatInput({ onSendMessage, isLoading = false, onAuthRequ
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything..."
+              placeholder="Generate a blue pig with wings floating in space"
               className="flex-1 min-h-[24px] max-h-[200px] resize-none bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground"
               rows={1}
               disabled={isLoading}

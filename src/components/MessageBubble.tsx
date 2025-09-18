@@ -1,12 +1,23 @@
 'use client';
 
 import { Bot, User } from 'lucide-react';
+import ImageGeneration from './ImageGeneration';
 
 interface Message {
   id: string;
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  imageGeneration?: {
+    batchId: string;
+    images: Array<{
+      id: string;
+      provider: string;
+      imageUrl: string | null;
+      status: 'completed' | 'failed' | 'pending';
+      error?: string;
+    }>;
+  };
 }
 
 interface MessageBubbleProps {
@@ -41,6 +52,16 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           <p className="whitespace-pre-wrap text-sm leading-relaxed">
             {message.content}
           </p>
+          
+          {/* Image Generation Component */}
+          {message.imageGeneration && (
+            <div className="mt-4">
+              <ImageGeneration 
+                images={message.imageGeneration.images}
+                batchId={message.imageGeneration.batchId}
+              />
+            </div>
+          )}
         </div>
         
       
