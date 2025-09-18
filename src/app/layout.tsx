@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Chat Assistant",
-  description: "A modern AI chat interface built with Next.js and Tailwind CSS",
+  title: "ImageMax - Multi-Model Image Generation",
+  description: "Compare AI image generation across multiple models - DALL-E, Midjourney, Stable Diffusion, and more",
 };
 
 export default function RootLayout({
