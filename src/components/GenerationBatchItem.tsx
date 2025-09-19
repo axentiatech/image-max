@@ -62,7 +62,7 @@ const PureGenerationBatchItem = ({
         
         <SidebarMenuButton asChild isActive={isActive} className="h-auto p-2">
           <Link 
-            href={`/generation/${batch.id}`} 
+            href={`/batch/${batch.id}`} 
             onClick={() => setOpenMobile(false)}
             className="flex flex-col items-start gap-2"
           >
