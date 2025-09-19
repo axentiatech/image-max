@@ -2,10 +2,10 @@ const { createClient } = require("@supabase/supabase-js");
 const { readFileSync } = require("fs");
 const { join } = require("path");
 
-// Use the correct URL based on your S3 endpoint
-const supabaseUrl = "https://konjxzkkriyprozobxzq.supabase.co"; // Remove the trailing space
-const supabaseServiceKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvbmp4emtrcml5cHJvem9ieHpxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTk0MDkzNSwiZXhwIjoyMDY3NTE2OTM1fQ.abJPuC3y1aJgCKl6pxOvudGUNWmWQr7FB4v0T6waZ3E";
+ 
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
 
 // Create Supabase client with service role key
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
