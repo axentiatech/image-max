@@ -114,7 +114,7 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      // Call the image generation API - this will create the chat if it doesn't exist
+    
       const response = await fetch('/api/generate-images', {
         method: 'POST',
         headers: {
