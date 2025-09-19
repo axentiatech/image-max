@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { auth } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 interface GenerateImagesRequest {
   prompt: string;
@@ -24,18 +22,18 @@ interface GenerateImagesResponse {
   images: ImageResult[];
 }
 
-// Mock providers configuration
+ 
 const PROVIDERS = [
   { name: 'midjourney', delay: 2000 },
   { name: 'dalle', delay: 3000 },
   { name: 'stability', delay: 4000 },
 ];
 
-// Mock image generation function
+ 
 async function mockImageGeneration(provider: string, delay: number): Promise<{ imageUrl: string; success: boolean; error?: string }> {
   return new Promise((resolve) => {
     setTimeout(() => {
-      // Simulate occasional failures (10% chance)
+       
       if (Math.random() < 0.1) {
         resolve({
           imageUrl: '',
@@ -54,7 +52,7 @@ async function mockImageGeneration(provider: string, delay: number): Promise<{ i
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
+   
     const session = await auth.api.getSession({
       headers: request.headers,
     });
@@ -82,7 +80,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!chat) {
-      // Create new chat with a title generated from the prompt
+      
       const title = prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt;
       chat = await prisma.chat.create({
         data: {
@@ -93,7 +91,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create generation batch
+    
     const batch = await prisma.generationBatch.create({
       data: {
         chatId,
@@ -102,7 +100,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create image generation records
+     
     const imageGenerations = await Promise.all(
       PROVIDERS.map(provider =>
         prisma.imageGeneration.create({
@@ -116,11 +114,11 @@ export async function POST(request: NextRequest) {
       )
     );
 
-    // Check if we're in mock mode
+    
     const isMockMode = process.env.MOCK_IMAGES === 'true';
-
-    if (true) {
-      // Mock mode: simulate image generation with delays
+    console.log('isMockMode', isMockMode);
+    if (isMockMode) {
+      
       const results = await Promise.allSettled(
         PROVIDERS.map(async (provider, index) => {
           const generation = imageGenerations[index];
