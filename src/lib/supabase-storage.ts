@@ -67,11 +67,11 @@ export async function uploadImageToSupabase(
       url: publicUrlData.publicUrl,
       fileName: data.path,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Unexpected upload error:', error);
     return {
       success: false,
-      error: error.message || 'Upload failed',
+      error: error instanceof Error ? error.message : 'Upload failed',
     };
   }
 }

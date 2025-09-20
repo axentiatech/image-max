@@ -92,12 +92,12 @@ export class DalleProvider implements ImageProvider {
           error: 'No image data returned from DALL-E API'
         };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ DALL-E generation error:', error);
       return {
         imageUrl: null,
         success: false,
-        error: error.message || 'DALL-E generation failed'
+        error: error instanceof Error ? error.message : 'DALL-E generation failed'
       };
     }
   }

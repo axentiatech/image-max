@@ -22,7 +22,7 @@ const PureChatItem = ({
   onDelete,
   setOpenMobile,
 }: {
-  chat:  any;
+  chat: { id: string; title: string; createdAt: Date };
   isActive: boolean;
   onDelete: (chatId: string) => void;
   setOpenMobile: (open: boolean) => void;

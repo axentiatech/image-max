@@ -134,12 +134,12 @@ export async function POST(request: NextRequest) {
                error: result.error,
              };
            }
-         } catch (error: any) {
+         } catch (error: unknown) {
            await prisma.imageGeneration.update({
              where: { id: generation.id },
              data: {
                status: 'failed',
-               errorMsg: error.message,
+               errorMsg: error instanceof Error ? error.message : 'Unknown error',
                completedAt: new Date(),
              },
            });
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
              provider: provider.getName(),
              imageUrl: null,
              status: 'failed' as const,
-             error: error.message,
+              error: error instanceof Error ? error.message : 'Unknown error',
            };
          }
        })

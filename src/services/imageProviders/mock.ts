@@ -9,7 +9,7 @@ export class MockProvider implements ImageProvider {
     this.delay = delay;
   }
 
-  async generateImage(prompt: string): Promise<ImageResult> {
+  async generateImage(): Promise<ImageResult> {
     return new Promise((resolve) => {
       setTimeout(() => {
         // 10% chance of failure for testing

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+// import { useRouter } from 'next/navigation'; // Unused import
 import AuthModal from '@/components/AuthModal';
 import { useAuth } from '@/hooks/useAuth';
 import { AppSidebar } from '@/components/appsidebar';
@@ -31,7 +31,7 @@ export default function Home() {
     images: [],
     isGenerating: false,
   });
-  const router = useRouter();
+  // const router = useRouter(); // Unused variable
   const { user, isAuthenticated, isModalOpen, openAuthModal, closeAuthModal } = useAuth();
 
   const handleGenerateImages = async () => {
@@ -179,7 +179,7 @@ export default function Home() {
       
               {currentGeneration.isGenerating ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {['Midjourney', 'DALL-E', 'Stability'].map((provider, index) => (
+                  {['Midjourney', 'DALL-E', 'Stability'].map((provider) => (
                     <div key={provider} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">{provider}</span>

@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import ChatInput from '@/components/ChatInput';
 import MessageBubble from '@/components/MessageBubble';
 import AuthModal from '@/components/AuthModal';
 import { useAuth } from '@/hooks/useAuth';
 import { AppSidebar } from '@/components/appsidebar';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { generateUUID } from '@/lib/utils';
+// import { generateUUID } from '@/lib/utils'; // Unused import
 
 interface Message {
   id: string;
@@ -33,7 +33,7 @@ export default function ChatPage() {
   const [chatTitle, setChatTitle] = useState<string>('New Chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const params = useParams();
-  const router = useRouter();
+  // const router = useRouter(); // Unused variable
   const { user, isAuthenticated, isModalOpen, openAuthModal, closeAuthModal } = useAuth();
   
   const chatId = params.id as string;
@@ -58,7 +58,7 @@ export default function ChatPage() {
             
             // Convert generation batches to messages
             const chatMessages: Message[] = [];
-            chat.generations.forEach((batch: any) => {
+            chat.generations.forEach((batch: { id: string; prompt: string; createdAt: Date; generations: Array<{ id: string; model: string; imageUrl: string | null; status: 'completed' | 'failed' | 'pending'; errorMsg?: string | null }> }) => {
               // Add user message
               chatMessages.push({
                 id: `user-${batch.id}`,
@@ -75,12 +75,12 @@ export default function ChatPage() {
                 timestamp: new Date(batch.createdAt),
                 imageGeneration: {
                   batchId: batch.id,
-                  images: batch.generations.map((gen: any) => ({
+                  images: batch.generations.map((gen: { id: string; model: string; imageUrl: string | null; status: 'completed' | 'failed' | 'pending'; errorMsg?: string | null }) => ({
                     id: gen.id,
                     provider: gen.model,
                     imageUrl: gen.imageUrl,
-                    status: gen.status,
-                    error: gen.errorMsg,
+                    status: gen.status as 'completed' | 'failed' | 'pending',
+                    error: gen.errorMsg || undefined,
                   })),
                 },
               });

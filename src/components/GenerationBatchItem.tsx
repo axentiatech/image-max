@@ -75,7 +75,7 @@ const PureGenerationBatchItem = ({
       
         <div className="px-2 pb-2">
           <div className="grid grid-cols-3 gap-2">
-            {displayGenerations.map((generation, index) => (
+            {displayGenerations.map((generation) => (
               <div
                 key={generation.id}
                 className="relative w-20 h-20 rounded-md overflow-hidden bg-muted border border-border"

@@ -45,10 +45,10 @@ export function decodeBase64Image(base64Data: string): DecodedImageResult {
       mimeType,
       format,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       success: false,
-      error: error.message || 'Failed to decode base64 image',
+      error: error instanceof Error ? error.message : 'Failed to decode base64 image',
     };
   }
 }
@@ -131,7 +131,12 @@ function getMimeTypeFromFormat(format: string): string {
  * Extract image data from DALL-E API response
  * Handles different response formats that might contain base64 data
  */
-export function extractImageFromDalleResponse(responseData: any): DecodedImageResult {
+interface DalleResponseData {
+  data?: string | Array<{ b64_json?: string }>;
+  image?: string;
+}
+
+export function extractImageFromDalleResponse(responseData: unknown): DecodedImageResult {
   try {
     // Handle different possible response structures
     let base64Data: string | null = null;
@@ -141,16 +146,22 @@ export function extractImageFromDalleResponse(responseData: any): DecodedImageRe
       base64Data = responseData;
     }
     // Case 2: Base64 data in data field
-    else if (responseData.data && typeof responseData.data === 'string') {
-      base64Data = responseData.data;
-    }
-    // Case 3: Base64 data in nested structure
-    else if (responseData.data && responseData.data[0] && responseData.data[0].b64_json) {
-      base64Data = responseData.data[0].b64_json;
+    else if (typeof responseData === 'object' && responseData !== null && 'data' in responseData) {
+      const data = (responseData as DalleResponseData).data;
+      if (typeof data === 'string') {
+        base64Data = data;
+      }
+      // Case 3: Base64 data in nested structure
+      else if (Array.isArray(data) && data[0] && 'b64_json' in data[0]) {
+        base64Data = data[0].b64_json || null;
+      }
     }
     // Case 4: Base64 data in image field
-    else if (responseData.image && typeof responseData.image === 'string') {
-      base64Data = responseData.image;
+    else if (typeof responseData === 'object' && responseData !== null && 'image' in responseData) {
+      const image = (responseData as DalleResponseData).image;
+      if (typeof image === 'string') {
+        base64Data = image;
+      }
     }
 
     if (!base64Data) {
@@ -161,10 +172,10 @@ export function extractImageFromDalleResponse(responseData: any): DecodedImageRe
     }
 
     return decodeBase64Image(base64Data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       success: false,
-      error: error.message || 'Failed to extract image from DALL-E response',
+      error: error instanceof Error ? error.message : 'Failed to extract image from DALL-E response',
     };
   }
 }

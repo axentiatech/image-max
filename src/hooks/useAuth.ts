@@ -3,8 +3,15 @@
 import { useState, useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 
+interface User {
+  id: string;
+  name?: string | null;
+  email: string;
+  image?: string | null;
+}
+
 export function useAuth() {
-  const [session, setSession] = useState<{ user: any } | null>(null);
+  const [session, setSession] = useState<{ user: User } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 

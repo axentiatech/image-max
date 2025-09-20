@@ -196,7 +196,7 @@ export default function BatchPage() {
             <div className="flex items-center justify-center flex-1">
               <div className="text-center">
                 <h2 className="text-xl font-semibold mb-2">Batch not found</h2>
-                <p className="text-muted-foreground mb-4">The batch you're looking for doesn't exist.</p>
+                <p className="text-muted-foreground mb-4">The batch you&apos;re looking for doesn&apos;t exist.</p>
                 <Button onClick={() => router.push('/')}>Go to Home</Button>
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function BatchPage() {
 
               {currentGeneration.isGenerating ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {['Midjourney', 'DALL-E', 'Stability'].map((provider, index) => (
+                  {['Midjourney', 'DALL-E', 'Stability'].map((provider) => (
                     <div key={provider} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">{provider}</span>

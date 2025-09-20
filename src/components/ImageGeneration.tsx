@@ -16,7 +16,7 @@ interface ImageGenerationProps {
   batchId: string;
 }
 
-export default function ImageGeneration({ images, batchId }: ImageGenerationProps) {
+export default function ImageGeneration({ images }: ImageGenerationProps) {
   const [imageStates, setImageStates] = useState(images);
 
   useEffect(() => {
